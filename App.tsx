@@ -1,13 +1,34 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, Button, Alert } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Button,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import ReadingsScreen from './ReadingsScreen';
+
+type Reading = {
+  id: string;
+  time: string;
+  glucose: number;
+  note: string;
+  punctureSpot: string;
+};
 
 export default function App() {
-  const [value, setValue] = useState('');
+  const [glucose, setGlucose] = useState('');
+  const [note, setNote] = useState('');
+  const [punctureSpot, setPunctureSpot] = useState('');
   const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
+  const [readings, setReadings] = useState<Reading[]>([]);
+  const [screen, setScreen] = useState<'home' | 'readings'>('home');
 
   const handleSubmit = () => {
-    const trimmed = value.trim();
+    const trimmed = glucose.trim();
     if (!trimmed) {
       Alert.alert('Validation', 'Please enter a glucose value.');
       return;
@@ -17,27 +38,69 @@ export default function App() {
       Alert.alert('Validation', 'Please enter a valid positive number.');
       return;
     }
+
+    const newReading: Reading = {
+      id: String(Date.now()),
+      time: new Date().toLocaleString(),
+      glucose: num,
+      note: note.trim(),
+      punctureSpot: punctureSpot.trim(),
+    };
+    setReadings(prev => [newReading, ...prev]);
     setLastSubmitted(trimmed);
-    setValue('');
+    setGlucose('');
+    setNote('');
+    setPunctureSpot('');
     Alert.alert('Saved', `Glucose ${trimmed} saved.`);
   };
 
+  if (screen === 'readings') {
+    return (
+      <ReadingsScreen
+        readings={readings}
+        onBack={() => setScreen('home')}
+      />
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Blood Glucose Tracker</Text>
+
       <TextInput
         style={styles.input}
         keyboardType="numeric"
         placeholder="Enter glucose (mg/dL)"
-        value={value}
-        onChangeText={setValue}
+        value={glucose}
+        onChangeText={setGlucose}
       />
-      <View style={styles.button}>
-        <Button title="Submit" onPress={handleSubmit} />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Note (optional)"
+        value={note}
+        onChangeText={setNote}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Puncture Spot (e.g., finger & side)"
+        value={punctureSpot}
+        onChangeText={setPunctureSpot}
+      />
+
+      <View style={styles.rowButtons}>
+        <View style={styles.button}>
+          <Button title="Submit" onPress={handleSubmit} />
+        </View>
+        <View style={styles.button}>
+          <Button title="View Readings" onPress={() => setScreen('readings')} />
+        </View>
       </View>
+
       {lastSubmitted && <Text style={styles.confirmation}>Last: {lastSubmitted} mg/dL</Text>}
       <StatusBar style="auto" />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -64,7 +127,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   button: {
+    // when displayed in a row, let buttons share space
+    flex: 1,
+    marginBottom: 12,
+  },
+  rowButtons: {
+    flexDirection: 'row',
     width: '100%',
+    justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 12,
   },
   confirmation: {
