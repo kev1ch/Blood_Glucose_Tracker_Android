@@ -4,12 +4,14 @@ import {
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
   TextInput,
   Button,
   Alert,
   ScrollView,
 } from 'react-native';
 import ReadingsScreen from './ReadingsScreen';
+import AboutScreen from './AboutScreen';
 
 type Reading = {
   id: string;
@@ -25,7 +27,7 @@ export default function App() {
   const [punctureSpot, setPunctureSpot] = useState('');
   const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
-  const [screen, setScreen] = useState<'home' | 'readings'>('home');
+  const [screen, setScreen] = useState<'home' | 'readings' | 'about'>('home');
 
   const handleSubmit = () => {
     const trimmed = glucose.trim();
@@ -61,6 +63,10 @@ export default function App() {
         onBack={() => setScreen('home')}
       />
     );
+  }
+
+  if (screen === 'about') {
+    return <AboutScreen onBack={() => setScreen('home')} />;
   }
 
   return (
@@ -100,17 +106,21 @@ export default function App() {
 
       {lastSubmitted && <Text style={styles.confirmation}>Last: {lastSubmitted} mg/dL</Text>}
       <StatusBar style="auto" />
+      <TouchableOpacity style={styles.footer} onPress={() => setScreen('about')}>
+        <Text style={styles.linkText}>About</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    paddingBottom: 100,
   },
   title: {
     fontSize: 20,
@@ -141,5 +151,15 @@ const styles = StyleSheet.create({
   confirmation: {
     marginTop: 8,
     color: '#333',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    paddingVertical: 12,
+  },
+  linkText: {
+    color: '#0066cc',
+    textDecorationLine: 'underline',
   },
 });
