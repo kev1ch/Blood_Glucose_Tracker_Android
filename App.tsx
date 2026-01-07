@@ -9,7 +9,9 @@ import {
   Button,
   Alert,
   ScrollView,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import ReadingsScreen from './ReadingsScreen';
 import AboutScreen from './AboutScreen';
 
@@ -25,6 +27,9 @@ export default function App() {
   const [glucose, setGlucose] = useState('');
   const [note, setNote] = useState('');
   const [punctureSpot, setPunctureSpot] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
   const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [screen, setScreen] = useState<'home' | 'readings' | 'about'>('home');
@@ -43,7 +48,7 @@ export default function App() {
 
     const newReading: Reading = {
       id: String(Date.now()),
-      time: new Date().toLocaleString(),
+      time: date.toLocaleString(),
       glucose: num,
       note: note.trim(),
       punctureSpot: punctureSpot.trim(),
@@ -54,6 +59,14 @@ export default function App() {
     setNote('');
     setPunctureSpot('');
     Alert.alert('Saved', `Glucose ${trimmed} saved.`);
+  };
+
+  const onChangeDateTime = (event: any, selected?: Date) => {
+    const current = selected || date;
+    if (Platform.OS !== 'ios') {
+      setShowPicker(false);
+    }
+    setDate(current);
   };
 
   if (screen === 'readings') {
@@ -72,6 +85,39 @@ export default function App() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Blood Glucose Tracker</Text>
+
+      <View style={{ width: '100%', marginBottom: 12 }}>
+        <Text style={{ marginBottom: 6 }}>Selected time: {date.toLocaleString()}</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Set Date"
+              onPress={() => {
+                setPickerMode('date');
+                setShowPicker(true);
+              }}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Set Time"
+              onPress={() => {
+                setPickerMode('time');
+                setShowPicker(true);
+              }}
+            />
+          </View>
+        </View>
+        {showPicker && (
+          <DateTimePicker
+            value={date}
+            mode={pickerMode}
+            is24Hour={false}
+            display="default"
+            onChange={onChangeDateTime}
+          />
+        )}
+      </View>
 
       <TextInput
         style={styles.input}
