@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, Button, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ScrollView, StyleSheet, Alert } from 'react-native';
+import { getReadings, deleteReading, Reading as DBReading } from './DBHelper';
 
 type Reading = {
   id: string;
@@ -10,17 +11,58 @@ type Reading = {
 };
 
 export default function ReadingsScreen({
-  readings,
+  readings: initialReadings,
   onBack,
 }: {
-  readings: Reading[];
+  readings?: Reading[];
   onBack: () => void;
 }) {
+  const [readings, setReadings] = useState<DBReading[]>(initialReadings ?? []);
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const rows = await getReadings();
+      setReadings(rows);
+    } catch (e) {
+      console.warn('Failed to load readings', e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleDelete = (id: string) => {
+    Alert.alert('Delete', 'Delete this reading?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteReading(id);
+            await load();
+          } catch (e) {
+            console.warn('delete failed', e);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Readings</Text>
-        <Button title="Back" onPress={onBack} />
+        <View style={{ flexDirection: 'row' }}>
+          <Button title={loading ? 'Loading...' : 'Refresh'} onPress={load} />
+          <View style={{ width: 8 }} />
+          <Button title="Back" onPress={onBack} />
+        </View>
       </View>
 
       <View style={styles.tableHeader}>
@@ -28,6 +70,7 @@ export default function ReadingsScreen({
         <Text style={[styles.cell, styles.glucoseCell]}>Glucose (mg/dL)</Text>
         <Text style={[styles.cell, styles.noteCell]}>Note</Text>
         <Text style={[styles.cell, styles.spotCell]}>Puncture Spot</Text>
+        <Text style={[styles.cell, { flex: 0.8 }]}> </Text>
       </View>
 
       <ScrollView style={styles.list}>
@@ -40,6 +83,9 @@ export default function ReadingsScreen({
               <Text style={[styles.cell, styles.glucoseCell]}>{r.glucose}</Text>
               <Text style={[styles.cell, styles.noteCell]}>{r.note || '-'}</Text>
               <Text style={[styles.cell, styles.spotCell]}>{r.punctureSpot || '-'}</Text>
+              <View style={{ flex: 0.8 }}>
+                <Button title="Delete" color="#cc0000" onPress={() => handleDelete(r.id)} />
+              </View>
             </View>
           ))
         )}
