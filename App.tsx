@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { initDB, addReading, getReadings, Reading as DBReading } from './DBHelper';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -34,7 +35,7 @@ export default function App() {
   const [readings, setReadings] = useState<Reading[]>([]);
   const [screen, setScreen] = useState<'home' | 'readings' | 'about'>('home');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmed = glucose.trim();
     if (!trimmed) {
       Alert.alert('Validation', 'Please enter a glucose value.');
@@ -53,7 +54,13 @@ export default function App() {
       note: note.trim(),
       punctureSpot: punctureSpot.trim(),
     };
-    setReadings(prev => [newReading, ...prev]);
+    try {
+      await addReading(newReading as DBReading);
+      const rows = await getReadings();
+      setReadings(rows);
+    } catch (e) {
+      console.warn('save failed', e);
+    }
     setLastSubmitted(trimmed);
     setGlucose('');
     setNote('');
@@ -68,6 +75,18 @@ export default function App() {
     }
     setDate(current);
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await initDB();
+        const rows = await getReadings();
+        setReadings(rows);
+      } catch (e) {
+        console.warn('init DB failed', e);
+      }
+    })();
+  }, []);
 
   if (screen === 'readings') {
     return (
