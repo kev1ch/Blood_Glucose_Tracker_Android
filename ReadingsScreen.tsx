@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ScrollView, StyleSheet, Alert } from 'react-native';
-import { getReadings, deleteReading, Reading as DBReading } from './DBHelper';
+import { getReadingsPage, deleteReading, Reading as DBReading } from './DBHelper';
 
 type Reading = {
   id: string;
@@ -18,13 +18,22 @@ export default function ReadingsScreen({
   onBack: () => void;
 }) {
   const [readings, setReadings] = useState<DBReading[]>(initialReadings ?? []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  async function load(pageArg?: number) {
     setLoading(true);
     try {
-      const rows = await getReadings();
-      setReadings(rows);
+      const pageToLoad = pageArg ?? currentPage;
+      const res = await getReadingsPage(pageToLoad, pageSize);
+      if (res.items.length === 0 && pageToLoad > 1) {
+        setCurrentPage(pageToLoad - 1);
+        return;
+      }
+      setReadings(res.items);
+      setTotal(res.total);
     } catch (e) {
       console.warn('Failed to load readings', e);
     } finally {
@@ -33,8 +42,8 @@ export default function ReadingsScreen({
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(currentPage);
+  }, [currentPage, pageSize]);
 
   const handleDelete = (id: string) => {
     Alert.alert('Delete', 'Delete this reading?', [
@@ -45,7 +54,7 @@ export default function ReadingsScreen({
         onPress: async () => {
           try {
             await deleteReading(id);
-            await load();
+            await load(currentPage);
           } catch (e) {
             console.warn('delete failed', e);
           }
@@ -59,7 +68,7 @@ export default function ReadingsScreen({
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Readings</Text>
         <View style={{ flexDirection: 'row' }}>
-          <Button title={loading ? 'Loading...' : 'Refresh'} onPress={load} />
+          <Button title={loading ? 'Loading...' : 'Refresh'} onPress={() => load()} />
           <View style={{ width: 8 }} />
           <Button title="Back" onPress={onBack} />
         </View>
@@ -90,6 +99,20 @@ export default function ReadingsScreen({
           ))
         )}
       </ScrollView>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8 }}>
+        <Button title="Prev" disabled={currentPage <= 1 || loading} onPress={() => setCurrentPage(p => Math.max(1, p - 1))} />
+        <View style={{ width: 12 }} />
+        <Text style={{ alignSelf: 'center' }}>
+          Page {currentPage} of {Math.max(1, Math.ceil(total / pageSize))} ({total} total)
+        </Text>
+        <View style={{ width: 12 }} />
+        <Button
+          title="Next"
+          disabled={currentPage >= Math.ceil(Math.max(1, total) / pageSize) || loading}
+          onPress={() => setCurrentPage(p => p + 1)}
+        />
+      </View>
     </View>
   );
 }

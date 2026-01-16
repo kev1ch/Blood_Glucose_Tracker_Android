@@ -59,6 +59,14 @@ export async function getReadings(): Promise<Reading[]> {
   return await readAll();
 }
 
+export async function getReadingsPage(page = 1, pageSize = 10): Promise<{ items: Reading[]; total: number }> {
+  const all = await readAll();
+  const total = all.length;
+  const start = (page - 1) * pageSize;
+  const items = all.slice(start, start + pageSize);
+  return { items, total };
+}
+
 export async function deleteReading(id: string): Promise<void> {
   const items = await readAll();
   const filtered = items.filter(i => i.id !== id);
