@@ -82,6 +82,20 @@ export default function ReadingsScreen({
         <Text style={[styles.cell, { flex: 0.8 }]}> </Text>
       </View>
 
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginVertical: 8 }}>
+        <Button title="Prev" disabled={currentPage <= 1 || loading} onPress={() => setCurrentPage(p => Math.max(1, p - 1))} />
+        <View style={{ width: 12 }} />
+        <Text style={{ alignSelf: 'center' }}>
+          Page {currentPage} of {Math.max(1, Math.ceil(total / pageSize))} ({total} total)
+        </Text>
+        <View style={{ width: 12 }} />
+        <Button
+          title="Next"
+          disabled={currentPage >= Math.ceil(Math.max(1, total) / pageSize) || loading}
+          onPress={() => setCurrentPage(p => p + 1)}
+        />
+      </View>
+
       <ScrollView style={styles.list}>
         {readings.length === 0 ? (
           <Text style={styles.empty}>No readings yet.</Text>
@@ -99,20 +113,6 @@ export default function ReadingsScreen({
           ))
         )}
       </ScrollView>
-
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8 }}>
-        <Button title="Prev" disabled={currentPage <= 1 || loading} onPress={() => setCurrentPage(p => Math.max(1, p - 1))} />
-        <View style={{ width: 12 }} />
-        <Text style={{ alignSelf: 'center' }}>
-          Page {currentPage} of {Math.max(1, Math.ceil(total / pageSize))} ({total} total)
-        </Text>
-        <View style={{ width: 12 }} />
-        <Button
-          title="Next"
-          disabled={currentPage >= Math.ceil(Math.max(1, total) / pageSize) || loading}
-          onPress={() => setCurrentPage(p => p + 1)}
-        />
-      </View>
     </View>
   );
 }
