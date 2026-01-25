@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Button, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { getReadingsPage, deleteReading, Reading as DBReading } from './DBHelper';
 
 type Reading = {
@@ -18,6 +18,9 @@ export default function ReadingsScreen({
   onBack: () => void;
 }) {
   const [readings, setReadings] = useState<DBReading[]>(initialReadings ?? []);
+  type SortBy = 'time' | 'glucose' | 'punctureSpot' | null;
+  const [sortBy, setSortBy] = useState<SortBy>('time');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -32,7 +35,7 @@ export default function ReadingsScreen({
         setCurrentPage(pageToLoad - 1);
         return;
       }
-      setReadings(res.items);
+      setReadings(sortArray(res.items, sortBy, sortDir));
       setTotal(res.total);
     } catch (e) {
       console.warn('Failed to load readings', e);
@@ -41,9 +44,43 @@ export default function ReadingsScreen({
     }
   }
 
+  function sortArray(items: DBReading[], by: SortBy, dir: 'asc' | 'desc') {
+    if (!by) return items.slice();
+    const a = items.slice();
+    a.sort((x, y) => {
+      let av: any;
+      let bv: any;
+      if (by === 'time') {
+        av = new Date(x.time).getTime();
+        bv = new Date(y.time).getTime();
+        if (isNaN(av)) av = 0;
+        if (isNaN(bv)) bv = 0;
+      } else if (by === 'glucose') {
+        av = x.glucose ?? 0;
+        bv = y.glucose ?? 0;
+      } else {
+        av = (x.punctureSpot || '').toLowerCase();
+        bv = (y.punctureSpot || '').toLowerCase();
+      }
+
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return dir === 'asc' ? av - bv : bv - av;
+      }
+
+      if (av < bv) return dir === 'asc' ? -1 : 1;
+      if (av > bv) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return a;
+  }
+
   useEffect(() => {
     load(currentPage);
   }, [currentPage, pageSize]);
+
+  useEffect(() => {
+    setReadings(prev => sortArray(prev, sortBy, sortDir));
+  }, [sortBy, sortDir]);
 
   const handleDelete = (id: string) => {
     Alert.alert('Delete', 'Delete this reading?', [
@@ -63,6 +100,16 @@ export default function ReadingsScreen({
     ]);
   };
 
+  function handleSort(col: SortBy) {
+    if (!col) return;
+    const nextDir = sortBy === col ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    setSortBy(col);
+    setSortDir(nextDir);
+  }
+
+  const headerLabel = (label: string, col: SortBy) =>
+    col && sortBy === col ? `${label} ${sortDir === 'asc' ? '▲' : '▼'}` : label;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -75,10 +122,20 @@ export default function ReadingsScreen({
       </View>
 
       <View style={styles.tableHeader}>
-        <Text style={[styles.cell, styles.timeCell]}>Time</Text>
-        <Text style={[styles.cell, styles.glucoseCell]}>Glucose (mg/dL)</Text>
-        <Text style={[styles.cell, styles.noteCell]}>Note</Text>
-        <Text style={[styles.cell, styles.spotCell]}>Puncture Spot</Text>
+        <TouchableOpacity onPress={() => handleSort('time')} style={{ flex: 3 }}>
+          <Text style={[styles.cell, styles.timeCell]}>{headerLabel('Time', 'time')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => handleSort('glucose')} style={{ flex: 1 }}>
+          <Text style={[styles.cell, styles.glucoseCell]}>{headerLabel('Glucose (mg/dL)', 'glucose')}</Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.cell, styles.noteCell]}>Notes</Text>
+
+        <TouchableOpacity onPress={() => handleSort('punctureSpot')} style={{ flex: 1.5 }}>
+          <Text style={[styles.cell, styles.spotCell]}>{headerLabel('Puncture Spot', 'punctureSpot')}</Text>
+        </TouchableOpacity>
+
         <Text style={[styles.cell, { flex: 0.8 }]}> </Text>
       </View>
 
