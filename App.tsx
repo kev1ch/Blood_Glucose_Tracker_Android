@@ -15,6 +15,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ReadingsScreen from './ReadingsScreen';
 import AboutScreen from './AboutScreen';
+import SettingsScreen from './SettingsScreen';
 
 type Reading = {
   id: string;
@@ -33,7 +34,7 @@ export default function App() {
   const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
   const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
-  const [screen, setScreen] = useState<'home' | 'readings' | 'about'>('home');
+  const [screen, setScreen] = useState<'home' | 'readings' | 'about' | 'settings'>('home');
 
   const handleSubmit = async () => {
     const trimmed = glucose.trim();
@@ -99,6 +100,10 @@ export default function App() {
 
   if (screen === 'about') {
     return <AboutScreen onBack={() => setScreen('home')} />;
+  }
+
+  if (screen === 'settings') {
+    return <SettingsScreen onBack={() => setScreen('home')} />;
   }
 
   return (
@@ -171,9 +176,14 @@ export default function App() {
 
       {lastSubmitted && <Text style={styles.confirmation}>Last: {lastSubmitted} mg/dL</Text>}
       <StatusBar style="auto" />
-      <TouchableOpacity style={styles.footer} onPress={() => setScreen('about')}>
-        <Text style={styles.linkText}>About</Text>
-      </TouchableOpacity>
+      <View style={styles.footerRow}>
+        <TouchableOpacity style={styles.footerLink} onPress={() => setScreen('about')}>
+          <Text style={styles.linkText}>About</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerLink} onPress={() => setScreen('settings')}>
+          <Text style={styles.linkText}>Settings</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -226,5 +236,16 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#0066cc',
     textDecorationLine: 'underline',
+  },
+  footerRow: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 20,
+  },
+  footerLink: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
 });
