@@ -51,10 +51,8 @@ export default function ReadingsScreen({
       let av: any;
       let bv: any;
       if (by === 'time') {
-        av = new Date(x.time).getTime();
-        bv = new Date(y.time).getTime();
-        if (isNaN(av)) av = 0;
-        if (isNaN(bv)) bv = 0;
+        av = parseTime(x.time);
+        bv = parseTime(y.time);
       } else if (by === 'glucose') {
         av = x.glucose ?? 0;
         bv = y.glucose ?? 0;
@@ -72,6 +70,43 @@ export default function ReadingsScreen({
       return 0;
     });
     return a;
+  }
+
+  function parseTime(t: any): number {
+    if (t == null) return 0;
+    if (typeof t === 'number') return t;
+    const s = String(t).trim();
+    if (/^\d+$/.test(s)) return Number(s);
+
+    // ISO or other formats parseable by Date.parse
+    let ms = Date.parse(s);
+    if (!isNaN(ms)) return ms;
+
+    // Try US locale like "1/9/2026, 6:03:35 PM" or variants
+    const us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+    if (us) {
+      const month = Number(us[1]);
+      const day = Number(us[2]);
+      const year = Number(us[3]);
+      let hour = Number(us[4]);
+      const minute = Number(us[5] || 0);
+      const second = Number(us[6] || 0);
+      const ampm = us[7];
+      if (ampm) {
+        if (/pm/i.test(ampm) && hour < 12) hour += 12;
+        if (/am/i.test(ampm) && hour === 12) hour = 0;
+      }
+      return new Date(year, month - 1, day, hour, minute, second).getTime();
+    }
+
+    // As a last attempt, normalize some characters and try parse again
+    try {
+      const alt = s.replace(/\u202F|\u00A0/g, ' ').replace(/,/g, '').replace(/\//g, '-');
+      ms = Date.parse(alt);
+      if (!isNaN(ms)) return ms;
+    } catch (_) {}
+
+    return 0;
   }
 
   useEffect(() => {
