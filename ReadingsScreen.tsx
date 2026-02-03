@@ -157,11 +157,11 @@ export default function ReadingsScreen({
       </View>
 
       <View style={styles.tableHeader}>
-        <TouchableOpacity onPress={() => handleSort('time')} style={{ flex: 3 }}>
+        <TouchableOpacity onPress={() => handleSort('time')} style={{ flex: 2 }}>
           <Text style={[styles.cell, styles.timeCell]}>{headerLabel('Time', 'time')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => handleSort('glucose')} style={{ flex: 1 }}>
+        <TouchableOpacity onPress={() => handleSort('glucose')} style={{ flex: 1.6 }}>
           <Text style={[styles.cell, styles.glucoseCell]}>{headerLabel('Glucose (mg/dL)', 'glucose')}</Text>
         </TouchableOpacity>
 
@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   timeCell: {
-    flex: 3,
+    flex: 2,
   },
   glucoseCell: {
-    flex: 1,
+    flex: 1.6,
     textAlign: 'center',
   },
   noteCell: {
