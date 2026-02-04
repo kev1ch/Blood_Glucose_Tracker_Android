@@ -22,7 +22,7 @@ export default function ReadingsScreen({
   const [sortBy, setSortBy] = useState<SortBy>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -135,6 +135,9 @@ export default function ReadingsScreen({
     ]);
   };
 
+  const prevDisabled = currentPage <= 1 || loading;
+  const nextDisabled = currentPage >= Math.ceil(Math.max(1, total) / pageSize) || loading;
+
   function handleSort(col: SortBy) {
     if (!col) return;
     const nextDir = sortBy === col ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
@@ -175,17 +178,31 @@ export default function ReadingsScreen({
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginVertical: 8 }}>
-        <Button title="Prev" disabled={currentPage <= 1 || loading} onPress={() => setCurrentPage(p => Math.max(1, p - 1))} />
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={prevDisabled}
+          onPress={() => !prevDisabled && setCurrentPage(p => Math.max(1, p - 1))}
+          style={[styles.pageButton, prevDisabled ? styles.pageButtonDisabled : styles.pageButtonActive]}
+        >
+          <Text style={[styles.pageButtonText, prevDisabled ? styles.pageButtonTextDisabled : null]}>Prev</Text>
+        </TouchableOpacity>
+
         <View style={{ width: 12 }} />
+
         <Text style={{ alignSelf: 'center' }}>
           Page {currentPage} of {Math.max(1, Math.ceil(total / pageSize))} ({total} total)
         </Text>
+
         <View style={{ width: 12 }} />
-        <Button
-          title="Next"
-          disabled={currentPage >= Math.ceil(Math.max(1, total) / pageSize) || loading}
-          onPress={() => setCurrentPage(p => p + 1)}
-        />
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={nextDisabled}
+          onPress={() => !nextDisabled && setCurrentPage(p => p + 1)}
+          style={[styles.pageButton, nextDisabled ? styles.pageButtonDisabled : styles.pageButtonActive]}
+        >
+          <Text style={[styles.pageButtonText, nextDisabled ? styles.pageButtonTextDisabled : null]}>Next</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.list}>
@@ -262,5 +279,24 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     color: '#666',
+  },
+  pageButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  pageButtonActive: {
+    backgroundColor: 'transparent',
+  },
+  pageButtonDisabled: {
+    backgroundColor: 'transparent',
+    opacity: 0.6,
+  },
+  pageButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+  },
+  pageButtonTextDisabled: {
+    color: '#999',
   },
 });
